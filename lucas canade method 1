@@ -1,0 +1,37 @@
+import numpy as np
+import cv2 as cv
+
+# Load two images
+frame1 = cv.imread('Screenshot (87).png')
+frame2 = cv.imread('Screenshot (88).png')
+
+# Resize images to the same dimensions
+frame1 = cv.resize(frame1, (frame2.shape[1], frame2.shape[0]))
+
+# Convert the images to grayscale
+prvs = cv.cvtColor(frame1, cv.COLOR_BGR2GRAY)
+next = cv.cvtColor(frame2, cv.COLOR_BGR2GRAY)
+
+# Calculate optical flow
+flow = cv.calcOpticalFlowFarneback(prvs, next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+
+# Convert the flow field to polar coordinates
+mag, ang = cv.cartToPolar(flow[..., 0], flow[..., 1])
+
+# Convert polar coordinates to HSV
+hsv = np.zeros_like(frame1)
+hsv[..., 0] = ang * 180 / np.pi / 2
+hsv[..., 1] = 255
+hsv[..., 2] = cv.normalize(mag, None, 0, 255, cv.NORM_MINMAX)
+
+# Convert HSV to BGR
+bgr = cv.cvtColor(hsv, cv.COLOR_HSV2BGR)
+
+# Display the original and optical flow images
+cv.imshow('Original Frame 1', frame1)
+cv.imshow('Original Frame 2', frame2)
+cv.imshow('Optical Flow', bgr)
+
+# Wait for a key press and close the windows
+cv.waitKey(0)
+cv.destroyAllWindows()
