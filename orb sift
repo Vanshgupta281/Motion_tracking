@@ -1,0 +1,46 @@
+import numpy as np
+import cv2 as cv
+
+img1 = cv.imread('Screenshot (97).png', cv.IMREAD_GRAYSCALE)  # queryImage
+img2 = cv.imread('Screenshot (98).png', cv.IMREAD_GRAYSCALE)  # trainImage
+
+# Initiate ORB detector
+orb = cv.ORB_create()
+
+# find the keypoints and descriptors with ORB
+kp1, des1 = orb.detectAndCompute(img1, None)
+kp2, des2 = orb.detectAndCompute(img2, None)
+
+# create BFMatcher object
+bf = cv.BFMatcher(cv.NORM_HAMMING, crossCheck=True)
+
+# Match descriptors.
+matches = bf.match(des1, des2)
+
+# Sort them in the order of their distance.
+matches = sorted(matches, key=lambda x: x.distance)
+
+# Draw matches and arrows with length threshold
+#img_matches = cv.drawMatches(img1, kp1, img2, kp2, matches, None, flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+
+threshold_length = 40 # Set your threshold length here
+#img3 = cv.drawMatches(img1,kp1,img2,kp2,matches,None,flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+for match in matches:
+    query_keypoint = kp1[match.queryIdx]
+    train_keypoint = kp2[match.trainIdx]
+
+    # Get the (x, y) coordinates of the matched keypoints
+    query_x, query_y = map(int, query_keypoint.pt)
+    train_x, train_y = map(int, train_keypoint.pt)
+    print(f"Query (x, y): ({query_x}, {query_y}), Train (x, y): ({train_x}, {train_y})")
+    # Calculate the arrow length
+    arrow_length = np.sqrt((train_x - query_x)**2 + (train_y - query_y)**2)
+
+    # Draw an arrow only if the length is below the threshold
+    if arrow_length < threshold_length:
+        cv.arrowedLine(img1, (query_x, query_y), (train_x, train_y), (0, 255, 0), 1)
+
+# Show the result
+cv.imshow("Matches and Arrows", img1)
+cv.waitKey(0)
+cv.destroyAllWindows()
