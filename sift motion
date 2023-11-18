@@ -1,0 +1,37 @@
+import numpy as np
+import cv2
+import matplotlib.pyplot as plt
+img1 = cv2.imread('Screenshot (97).png', cv2.IMREAD_GRAYSCALE)  # queryImage
+img2 = cv2.imread('Screenshot (98).png', cv2.IMREAD_GRAYSCALE)  # trainImage
+# Initiate SIFT detector
+sift = cv2.SIFT_create() 
+# find the keypoints and descriptors with SIFT
+kp1, des1 = sift.detectAndCompute(img1,None)
+kp2, des2 = sift.detectAndCompute(img2,None)
+# BFMatcher with default params
+bf = cv2.BFMatcher()
+matches = bf.knnMatch(des1,des2,k=2)
+# Apply ratio test
+good = []
+for m,n in matches:
+    if m.distance < 0.75*n.distance:
+        good.append([m])
+img3 = cv2.drawMatchesKnn(img1,kp1,img2,kp2,good,None,flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+# Extract coordinates of matching points
+matching_points_img1 = np.float32([kp1[m[0].queryIdx].pt for m in good]).reshape(-1, 1, 2)
+matching_points_img2 = np.float32([kp2[m[0].trainIdx].pt for m in good]).reshape(-1, 1, 2)
+# Print all matching coordinates
+for i in range(len(matching_points_img1)):
+    x_img1, y_img1 = matching_points_img1[i][0]
+    x_img2, y_img2 = matching_points_img2[i][0]
+    print(f"Matching Point {i + 1}:")
+    print(f"Image 1 - (x, y): ({x_img1}, {y_img1})")
+    print(f"Image 2 - (x, y): ({x_img2}, {y_img2})")
+    print()
+    arrow_length = np.sqrt((x_img1 - x_img2)**2 + (y_img1 - y_img2)**2)
+    if arrow_length <50:
+        cv2.arrowedLine(img1, (int(x_img1), int(y_img1)), (int(x_img2), int(y_img2)), (0, 255, 0), 2)
+# cv2.drawMatchesKnn expects list of lists as matches.
+cv2.imshow("img3",img3)
+cv2.imshow("img1",img1)
+cv2.waitKey(0)
